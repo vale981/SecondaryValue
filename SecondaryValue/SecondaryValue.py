@@ -4,7 +4,6 @@ courses.
 """
 
 import sympy
-from functools import lru_cache
 from collections.abc import Iterable
 from sympy import sympify, diff, symbols
 from sympy.abc import _clash
@@ -241,8 +240,6 @@ class SecondaryValue:
 
         return result
 
-
-    @lru_cache(maxsize=32)
     def _get_derivatives(self, *args):
         """Calculates the derivatives of the expression for a given
         set of variables specified by args.
