@@ -54,6 +54,34 @@ print(result)
 # symbolic form. (Works best in Jupyter Notebooks)
 x.pretty_gauss_propagation('a', 'b', 'c')
 ```
+
+### Vectorized Input
+`SecondaryValue` supports vectorized input. As a rule-of-thump: Put
+the iterable (list, np.array) where you would put scalars.
+
+You can mix scalars and vectors as long as all errors and values are
+either scalar or have the same length.
+
+```python
+from SecondaryValue import SecondaryValue
+x = SecondaryValue('a**2+b')
+
+x(a=[[1,2,3]], b=1)
+# >> array([ 2.,  5., 10.])
+
+x(a=([1,2,3], 1), b=1)
+# >> (array([ 2.,  5., 10.]), array([2., 4., 6.]))
+
+x(a=([1,2,3], [1,2,3]), b=1)
+# >> (array([ 2.,  5., 10.]), array([ 2.,  8., 18.]))
+
+x(a=([1,2,3], [1,2,3]), b=([1,2,3], 1))
+# >> (array([ 2.,  6., 12.]), array([ 2.23606798,  8.06225775, 18.02775638]))
+
+# THAT DOES NOT WORK:
+x(a=([1,2,3], [1,2,3]), b=([1,2], 1))
+```
+
 ### Dependencies
 To make the calculation of complex values easier, one can define
 dependencies for a `SecondaryValue`:

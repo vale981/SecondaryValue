@@ -67,7 +67,7 @@ class SecondaryValue:
                 continue
 
             tmp = sec_val(**kwargs)
-            kwargs[name] = tmp[0] if isinstance(tmp, Iterable) else tmp
+            kwargs[name] = tmp
             calc_deps[name] = tmp
 
         return kwargs, calc_deps
@@ -223,7 +223,8 @@ class SecondaryValue:
 
         # calulate the central value
         scalar_values, vector_values = filter_out_vecotrized(values)
-        central_value = self._calculate_central_value(scalar_values, vector_values)
+        central_value = self._calculate_central_value(scalar_values,
+                                                      vector_values)
 
         if not errors:
             return central_value
