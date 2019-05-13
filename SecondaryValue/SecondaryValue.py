@@ -114,7 +114,7 @@ class SecondaryValue:
         derivs = self._get_derivatives(*list(errors.keys()))
 
         # ugly, but works for now
-        terms = [np.array([(derivs[var] * err[i]).subs(values) \
+        terms = [np.array([(derivs[var](values) * err[i]) \
                           for var, err in errors.items() \
                            if len(err) > i and err[i] > 0],
                           dtype=self._dtype) for i in range(1, max_uncertainties)]
@@ -164,7 +164,8 @@ class SecondaryValue:
 
         for var in args:
             if var not in self._derivatives:
-                self._derivatives[var] = diff(self._parsed, var)
+                self._derivatives[var] = \
+                    sympy.lambdify(args, diff(self._parsed, var))
 
         return {var: self._derivatives[var] for var in args}
 
