@@ -85,7 +85,7 @@ class SecondaryValue:
 
         return kwargs
 
-    def _calculate(self, *args, **kwargs):
+    def _calculate(self, values, derivs, max_uncertainties):
         """Calculates a value from the expression by substituting
         variables by the values of the given keyword arguments.  If an
         argument is specified as a tuplpe of (value, error) the
@@ -96,22 +96,6 @@ class SecondaryValue:
         :rtype: numpy data type or np array of [value, errors, ...] or
                 a tuple the beforementioned as first element
         """
-
-        max_uncertainties = max([len(val) for _, val in kwargs.items() \
-                                 if isinstance(val, Iterable)] or [0])
-
-        # filter out the error values
-        errors = {var: val for var, val in kwargs.items() \
-                  if isinstance(val, Iterable) and len(val) > 1}
-
-        if not errors:
-            return self._dtype(self._parsed.subs(kwargs))
-
-        values = {var: (val[0] if isinstance(val, Iterable) else val) \
-                  for var, val in kwargs.items()}
-
-        # get them cached
-        derivs = self._get_derivatives(*list(errors.keys()))
 
         # ugly, but works for now
         terms = [np.array([(derivs[var](values) * err[i]) \
@@ -148,7 +132,24 @@ class SecondaryValue:
         kwargs = {var: val for var, val in kwargs.items() \
                   if var in self._symbols}
 
-        terms = self._calculate(*args, **kwargs)
+
+        max_uncertainties = max([len(val) for _, val in kwargs.items() \
+                                 if isinstance(val, Iterable)] or [0])
+
+        # filter out the error values
+        errors = {var: val for var, val in kwargs.items() \
+                  if isinstance(val, Iterable) and len(val) > 1}
+
+        if not errors:
+            return self._dtype(self._parsed.subs(kwargs))
+
+        values = {var: (val[0] if isinstance(val, Iterable) else val) \
+                  for var, val in kwargs.items()}
+
+        # get them cached
+        derivs = self._get_derivatives(*list(errors.keys()))
+
+        terms = self._calculate(values, derivs, max_uncertainties)
 
         if dep_values:
             return terms, dep_values
