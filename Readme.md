@@ -34,6 +34,26 @@ print(result)
 # symbolic form. (Works best in Jupyter Notebooks)
 x.pretty_gauss_propagation('a', 'b', 'c')
 ```
+
+### Default Values
+To reduce boylerplate one can set default substitutions for symbols.
+This especially usefull for constants.
+
+```python
+from SecondaryValue import SecondaryValue
+
+# create a secondary value with default arguments
+x = SecondaryValue("a + b", defaults=dict(b=1/2))
+
+# this works because `b` is substituted from the defaults
+result = x(b=1/2)
+print(result)
+# >> 1.0
+
+# As a goodie, you can print out the gaussian error distribution in
+# symbolic form. (Works best in Jupyter Notebooks)
+x.pretty_gauss_propagation('a', 'b', 'c')
+```
 ### Dependencies
 To make the calculation of complex values easier, one can define
 dependencies for a `SecondaryValue`:

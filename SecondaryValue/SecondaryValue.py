@@ -14,28 +14,32 @@ class SecondaryValue:
     """
     A value computed from a formular, optionally with error propagation.
     """
-    def __init__(self, expr, dependencies=False, dtype=np.float64):
+    def __init__(self, expr, dependencies=False, defaults=False,
+                 dtype=np.float64):
         """Creates a new Secondary Value.
 
         :param str expr: the expression from which to calculate the
             value, may be a sympy expression or a string.
         :param dict dependencies: secondary values to calculate as
             dependencies (in order)
+        :param dict defaults: Default arguments for the call.
         :param np.dtype dtype: the numpy datatype for the resulting
             value
+
         """
 
         self._expr = expr
         self._parsed = sympify(self._expr) if isinstance(self._expr, str) \
             else self._expr
 
-        self._symbols = set([symbol.__str__() \
-                         for symbol in self._parsed.free_symbols])
+        self._symbols = {symbol.__str__() \
+                         for symbol in self._parsed.free_symbols}
 
         self._deps = {name: dependency \
                       for name, dependency in dependencies.items() \
                       if name in self._symbols} if dependencies else {}
 
+        self._defaults = defaults
         self._dtype = dtype
 
         # with per-instance cache
@@ -64,6 +68,22 @@ class SecondaryValue:
 
         return kwargs, calc_deps
 
+    def _inject_defaults(self, **kwargs):
+        """Injects the default value for arguments.
+
+        :returns: the modified argument dictionary
+        :rtype: dict
+        """
+
+        if not self._defaults:
+            return kwargs
+
+        for name, value in self._defaults.items():
+            if name not in kwargs:
+                kwargs[name] = value
+
+        return kwargs
+
     def __call__(self, *args, **kwargs):
         """Calculates a value from the expression by substituting
         variables by the values of the given keyword arguments.  If an
@@ -78,6 +98,7 @@ class SecondaryValue:
         """
 
         kwargs, dep_values = self._calc_deps(**kwargs)
+        kwargs = self._inject_defaults(**kwargs)
 
         # check for missing symbols
         if not self._symbols <= set(kwargs.keys()):
