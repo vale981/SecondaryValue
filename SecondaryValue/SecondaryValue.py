@@ -29,8 +29,8 @@ class SecondaryValue:
         self._parsed = sympify(self._expr) if isinstance(self._expr, str) \
             else self._expr
 
-        self._symbols = [symbol.__str__() \
-                         for symbol in self._parsed.free_symbols]
+        self._symbols = set([symbol.__str__() \
+                         for symbol in self._parsed.free_symbols])
 
         self._deps = {name: dependency \
                       for name, dependency in dependencies.items() \
@@ -78,6 +78,11 @@ class SecondaryValue:
         """
 
         kwargs, dep_values = self._calc_deps(**kwargs)
+
+        # check for missing symbols
+        if not self._symbols <= set(kwargs.keys()):
+            return RuntimeError('Missing symbols: ' +
+                                (self._symbols - set(kwargs.keys())).__str__())
 
         # filter out unneeded
         kwargs = {var: val for var, val in kwargs.items() if var in self._symbols}
@@ -137,3 +142,11 @@ class SecondaryValue:
         terms = [(sympy.simplify(derivs[var]) * sympy.Dummy('Delta_' + var))**2 \
                          for var in variables]
         return sympy.sqrt(sum(terms))
+
+    def get_symbols(self):
+        """
+        :returns: The symbols that can be substituted.
+        :rtype: List
+        """
+
+        return self._symbols
