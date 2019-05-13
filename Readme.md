@@ -36,7 +36,7 @@ x.pretty_gauss_propagation('a', 'b', 'c')
 ```
 
 ### Default Values
-To reduce boylerplate one can set default substitutions for symbols.
+To reduce boilerplate one can set default substitutions for symbols.
 This especially usefull for constants.
 
 ```python
