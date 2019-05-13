@@ -85,7 +85,7 @@ class SecondaryValue:
 
         return kwargs
 
-    def _calculate(self, values, derivs, max_uncertainties):
+    def _calculate(self, values, derivs, max_uncertainties, errors):
         """Calculates a value from the expression by substituting
         variables by the values of the given keyword arguments.  If an
         argument is specified as a tuplpe of (value, error) the
@@ -98,7 +98,7 @@ class SecondaryValue:
         """
 
         # ugly, but works for now
-        terms = [np.array([(derivs[var](values) * err[i]) \
+        terms = [np.array([(derivs[var](**values) * err[i]) \
                           for var, err in errors.items() \
                            if len(err) > i and err[i] > 0],
                           dtype=self._dtype) for i in range(1, max_uncertainties)]
@@ -149,7 +149,7 @@ class SecondaryValue:
         # get them cached
         derivs = self._get_derivatives(*list(errors.keys()))
 
-        terms = self._calculate(values, derivs, max_uncertainties)
+        terms = self._calculate(values, derivs, max_uncertainties, errors)
 
         if dep_values:
             return terms, dep_values
