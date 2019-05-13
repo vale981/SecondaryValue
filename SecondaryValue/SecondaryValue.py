@@ -7,6 +7,7 @@ import sympy
 from functools import lru_cache
 from collections.abc import Iterable
 from sympy import sympify, diff, symbols
+from sympy.abc import _clash
 
 import numpy as np
 
@@ -29,7 +30,7 @@ class SecondaryValue:
         """
 
         self._expr = expr
-        self._parsed = sympify(self._expr) if isinstance(self._expr, str) \
+        self._parsed = sympify(self._expr, _clash) if isinstance(self._expr, str) \
             else self._expr
 
         self._symbols = {symbol.__str__() \
