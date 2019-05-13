@@ -146,7 +146,7 @@ class SecondaryValue:
     def get_symbols(self):
         """
         :returns: The symbols that can be substituted.
-        :rtype: List
+        :rtype: set
         """
 
         return self._symbols
