@@ -85,7 +85,7 @@ class SecondaryValue:
 
         return kwargs
 
-    def __call__(self, *args, **kwargs):
+    def _calculate(self, *args, **kwargs):
         """Calculates a value from the expression by substituting
         variables by the values of the given keyword arguments.  If an
         argument is specified as a tuplpe of (value, error) the
@@ -94,20 +94,8 @@ class SecondaryValue:
         :returns: value or [value, error] or [value, error], dependencies
 
         :rtype: numpy data type or np array of [value, errors, ...] or
-                a tuple the beforementioned as first element and a
-                dictionary with the calculated dependencies as a second value
+                a tuple the beforementioned as first element
         """
-
-        kwargs, dep_values = self._calc_deps(**kwargs)
-        kwargs = self._inject_defaults(**kwargs)
-
-        # check for missing symbols
-        if not self._symbols <= set(kwargs.keys()):
-            return RuntimeError('Missing symbols: ' +
-                                (self._symbols - set(kwargs.keys())).__str__())
-
-        # filter out unneeded
-        kwargs = {var: val for var, val in kwargs.items() if var in self._symbols}
 
         max_uncertainties = max([len(val) for _, val in kwargs.items() \
                                  if isinstance(val, Iterable)] or [0])
@@ -133,10 +121,39 @@ class SecondaryValue:
 
         terms = np.array([np.sqrt(t.dot(t)) for t in terms], dtype=self._dtype)
 
-        if dep_values:
-            return np.insert(terms, 0, self._parsed.subs(values)), dep_values
-
         return np.insert(terms, 0, self._parsed.subs(values))
+
+    def __call__(self, *args, **kwargs):
+        """Calculates a value from the expression by substituting
+        variables by the values of the given keyword arguments.  If an
+        argument is specified as a tuplpe of (value, error) the
+        gausssian error propagation will be computed.
+
+        :returns: value or [value, error] or [value, error], dependencies
+
+        :rtype: numpy data type or np array of [value, errors, ...] or
+                a tuple the beforementioned as first element and a
+                dictionary with the calculated dependencies as a second value
+        """
+
+        kwargs, dep_values = self._calc_deps(**kwargs)
+        kwargs = self._inject_defaults(**kwargs)
+
+        # check for missing symbols
+        if not self._symbols <= set(kwargs.keys()):
+            return RuntimeError('Missing symbols: ' +
+                                (self._symbols - set(kwargs.keys())).__str__())
+
+        # filter out unneeded
+        kwargs = {var: val for var, val in kwargs.items() \
+                  if var in self._symbols}
+
+        terms = self._calculate(*args, **kwargs)
+
+        if dep_values:
+            return terms, dep_values
+
+        return terms
 
 
     @lru_cache(maxsize=32)
