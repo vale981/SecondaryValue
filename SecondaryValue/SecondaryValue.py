@@ -147,7 +147,7 @@ class SecondaryValue:
 
         for var in args:
             if var not in self._derivatives:
-                self._derivatives[var] = sympy.diff(self._parsed, var)
+                self._derivatives[var] = diff(self._parsed, var)
 
         return {var: self._derivatives[var] for var in args}
 
@@ -167,8 +167,10 @@ class SecondaryValue:
 
     def get_symbols(self):
         """
-        :returns: The symbols that can be substituted.
-        :rtype: set
+        :returns: The symbols that can be substituted (recursively).
+        :rtype: dict
         """
 
-        return self._symbols
+        return {symbol: self._deps[symbol].get_symbols() \
+                if symbol in self._deps else {} \
+                for symbol in self._symbols}
