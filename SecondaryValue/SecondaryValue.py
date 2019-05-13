@@ -141,7 +141,7 @@ class SecondaryValue:
 
         # check for missing symbols
         if not self._symbols <= set(kwargs.keys()):
-            return RuntimeError('Missing symbols: ' +
+            raise RuntimeError('Missing symbols: ' +
                                 (self._symbols - set(kwargs.keys())).__str__())
 
         # filter out unneeded
