@@ -6,7 +6,7 @@ def readme():
         return f.read()
 
 setup(name='SecondaryValue',
-      version='0.0.8',
+      version='0.0.9',
       description='A helper to calculate the gaussian error propagation.',
       long_description=readme(),
       long_description_content_type='text/markdown',

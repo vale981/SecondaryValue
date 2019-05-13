@@ -64,8 +64,8 @@ class SecondaryValue:
                 continue
 
             tmp = sec_val(**kwargs)
+            kwargs[name] = tmp[0] if isinstance(tmp, Iterable) else tmp
             calc_deps[name] = tmp
-            kwargs[name] = tmp
 
         return kwargs, calc_deps
 
