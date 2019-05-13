@@ -88,16 +88,11 @@ class SecondaryValue:
 
         return kwargs
 
-    def _calculate(self, values, derivs, error):
-        """Calculates a value from the expression by substituting
-        variables by the values of the given keyword arguments.  If an
-        argument is specified as a tuplpe of (value, error) the
-        gausssian error propagation will be computed.
+    def _calculate_gauss_propagation(self, values, derivs, error):
+        """Calculates a single gaussian error propagation.
 
-        :returns: value or [value, error] or [value, error], dependencies
-
-        :rtype: numpy data type or np array of [value, errors, ...] or
-                a tuple the beforementioned as first element
+        :returns: error
+        :rtype: dtype
         """
 
         term = np.array([(derivs[var](**values) * err) \
@@ -108,17 +103,13 @@ class SecondaryValue:
 
         return self._dtype(term)
 
-    def __call__(self, *args, **kwargs):
-        """Calculates a value from the expression by substituting
-        variables by the values of the given keyword arguments.  If an
-        argument is specified as a tuplpe of (value, error) the
-        gausssian error propagation will be computed.
+    def _process_args(self, *args, **kwargs):
+        """Process the deconstruct given to `__call__`.
 
-        :returns: value or [value, error] or [value, error], dependencies
+        :returns: values (input values), errors (their errors),
+                  dep_values (the values and errors of the dependencies)
 
-        :rtype: numpy data type or np array of [value, errors, ...] or
-                a tuple the beforementioned as first element and a
-                dictionary with the calculated dependencies as a second value
+        :rtype: Tuple
         """
 
         kwargs, dep_values = self._calc_deps(**kwargs)
@@ -146,52 +137,104 @@ class SecondaryValue:
         values = {var: (val[0] if isinstance(val, Iterable) else val) \
                   for var, val in kwargs.items()}
 
-        # do the actual calulation
-        terms = []
-        scalar_values, vector_values = filter_out_vecotrized(values)
-        value = 0
-        value_length = length = max([len(elem) \
-                                     for elem in vector_values.values()] or [0])
+        return values, errors, dep_values
+
+    def _calculate_central_value(self, scalar_values, vector_values):
+        """Calculate the central value from the scalar and/or
+        vectorized input values.
+
+        :param dict scalar_values: the scalar input variables
+        :param dict vector_values: the vectorized input variables
+
+        :returns: the central value or an array of central values
+        :rtype: dtype / np.array[dtype]
+        """
+        central_value = 0
+        value_length = max([len(elem) \
+                            for elem in vector_values.values()] or [0])
+
         if vector_values:
-            value = np.empty(value_length)
+            central_value = np.empty(value_length)
             for i in range(0, value_length):
-                current_values = {**scalar_values,
-                                      **{key: val[i] \
-                                         for key, val in vector_values.items()}}
-                value[i] = self._parsed_lambda(**current_values)
+                current_values = join_row(scalar_values, vector_values, i)
+
+                central_value[i] = self._parsed_lambda(**current_values)
         else:
-            value = self._parsed_lambda(**values)
+            central_value = self._dtype(self._parsed_lambda(**scalar_values))
 
-        if not errors:
-            return value
+        return central_value
 
-        # get them cached
+    def _calculate_errors(self, errors, vector_values, scalar_values):
+        """Calculate the errors for the secondary value.
+
+        :param list[dict] errors: A list of dictionaries containing the errors.
+        :param dict vector_values: the central values
+        :param dict scalar_values: the scalar central values
+        :returns: error or list or errors
+        """
+
         derivs = self._get_derivatives(*list(errors[0].keys()))
+        terms = []
 
+        # iterate error series (horizontal)
         for error in errors:
             scalar_errors, vector_errors = filter_out_vecotrized(error)
-            length = max([len(elem) for elem in (list(vector_values.values())
-                                                + list(vector_errors.values()))] or [0])
+            length = max([len(elem) \
+                          for elem in (list(vector_values.values())
+                                      + list(vector_errors.values()))] or [0])
+
+            # if there are only scalar values and errors
             if length == 0:
-                terms.append(self._calculate(values,
+                terms.append(self._calculate_gauss_propagation(scalar_values,
                                          derivs, error))
+
+            # calculate error for every (value, error) pair. Errors
+            # are padded.
             else:
                 tmp = np.empty(length, dtype=self._dtype)
                 for i in range(0, length):
-                    current_values = {**scalar_values,
-                                      **{key: val[i] \
-                                         for key, val in vector_values.items()}}
+                    current_values = join_row(scalar_values, vector_values, i)
+                    current_errors = join_row(scalar_errors, vector_errors, i)
 
-                    current_errors = {**scalar_errors,
-                                      **{key: val[i] \
-                                         for key, val in vector_errors.items()}}
-
-                    tmp[i] = self._calculate(current_values,
-                                               derivs, current_errors)
+                    tmp[i] = \
+                        self._calculate_gauss_propagation(current_values,
+                                                          derivs, current_errors)
                 terms.append(tmp)
 
+        return terms
 
-        result = np.array([self._dtype(value)] + terms, dtype=self._dtype)
+    def __call__(self, *args, **kwargs):
+        """Calculates a value from the expression by substituting
+        variables by the values of the given keyword arguments.  If an
+        argument is specified as a tuplpe of (value, error) the
+        gausssian error propagation will be computed.
+
+        The values and errors can be iterable, but must compatible shapes.
+
+        :returns: value or [value, error] or [value, error], dependencies
+
+        :rtype: numpy data type or np array of [value, errors, ...] or
+                a tuple the beforementioned as first element and a
+                dictionary with the calculated dependencies as a second value
+        """
+
+        # process the keyword arguments
+        values, errors, dep_values = self._process_args(*args, **kwargs)
+
+        # calulate the central value
+        scalar_values, vector_values = filter_out_vecotrized(values)
+        central_value = self._calculate_central_value(scalar_values, vector_values)
+
+        if not errors:
+            return central_value
+
+        # calculate errors
+        result = self._calculate_errors(errors, vector_values, scalar_values)
+
+        # create the result tuple
+        result.insert(0, central_value)
+        result = tuple(result)
+
         if dep_values:
             return result, dep_values
 
@@ -248,3 +291,7 @@ def filter_out_vecotrized(dictionary):
             scalar[key] = value
 
     return scalar, vector
+
+def join_row(scalar, vector, index):
+     return {**scalar, **{key: val[index] \
+                          for key, val in vector.items()}}
