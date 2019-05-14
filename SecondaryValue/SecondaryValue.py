@@ -29,11 +29,12 @@ class SecondaryValue:
         """
 
         self._expr = expr
-        self._parsed = sympify(self._expr, _clash) if isinstance(self._expr, str) \
+        self._parsed = sympify(self._expr, _clash) \
+            if isinstance(self._expr, str) \
             else self._expr
 
         self._parsed_lambda = sympy.lambdify(self._parsed.free_symbols,
-                                             self._expr)
+                                             self._parsed, modules=np)
 
         self._symbols = {symbol.__str__() \
                          for symbol in self._parsed.free_symbols}
@@ -248,8 +249,8 @@ class SecondaryValue:
         for var in args:
             if var not in self._derivatives:
                 self._derivatives[var] = \
-                    sympy.lambdify(self._parsed.free_symbols
-                                   , diff(self._parsed, var))
+                    sympy.lambdify(self._parsed.free_symbols,
+                                   diff(self._parsed, var), modules=np)
 
         return {var: self._derivatives[var] for var in args}
 
