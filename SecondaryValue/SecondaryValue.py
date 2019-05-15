@@ -242,7 +242,7 @@ class SecondaryValue:
 
         return (result, dep_values) if retdeps else result
 
-    def _get_derivatives(self, *args):
+    def _get_derivatives(self, *args, lambdify=True):
         """Calculates the derivatives of the expression for a given
         set of variables specified by args.
         """
@@ -251,7 +251,8 @@ class SecondaryValue:
             if var not in self._derivatives:
                 self._derivatives[var] = \
                     sympy.lambdify(self._parsed.free_symbols,
-                                   diff(self._parsed, var), modules=np)
+                                   diff(self._parsed, var), modules=np)\
+                                   if lambdify else diff(self._parsed, var)
 
         return {var: self._derivatives[var] for var in args}
 
@@ -264,7 +265,7 @@ class SecondaryValue:
         :returns: sympy expression
         """
 
-        derivs = self._get_derivatives(*variables)
+        derivs = self._get_derivatives(*variables, lambdify=False)
         terms = [(sympy.simplify(derivs[var]) * sympy.Dummy('Delta_' + var))**2 \
                          for var in variables]
         return sympy.sqrt(sum(terms))
