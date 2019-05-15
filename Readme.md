@@ -28,7 +28,7 @@ result = x(a=(1, 20), b=(2,  30), c=2)
 # used if present. This may be useful to calculate statistical and systemic
 # errors in one go.
 print(result)
-# >> array([ 1.41421356, 35.35533906])
+# >> (1.41421356, 35.35533906)
 
 # As a goodie, you can print out the gaussian error distribution in
 # symbolic form. (Works best in Jupyter Notebooks)
@@ -82,6 +82,10 @@ x(a=([1,2,3], [1,2,3]), b=([1,2,3], 1))
 x(a=([1,2,3], [1,2,3]), b=([1,2], 1))
 ```
 
+If all the returned arrays in the tuple have the same shape, you can
+easily convert that tuple to a numpy array:
+`np.array(x(a=([1,2,3], [1,2,3]), b=([1,2,3], 1)))`
+
 ### Dependencies
 To make the calculation of complex values easier, one can define
 dependencies for a `SecondaryValue`:
@@ -90,14 +94,22 @@ dependencies for a `SecondaryValue`:
 from SecondaryValue import SecondaryValue
 
 dep = SecondaryValue('u')
-x = SecondaryValue("a + b", dependencies={'a': dep})
+x = SecondaryValue("a + b", dependencies=dict(a=dep))
 
 # x will now accept u as an additional kwarg and calculate d==dep on the fly
-# and return a dictionary containing it as a second return value.
+# and return a dictionary containing it as a second return value if you
+# specify `retdeps=True`.
+print(x(b=1, u=(1, 2), retdeps=True))
+# >> ((2.0, 2.0), {'a': ((1.0, 2.0), {})})
+
+# To make the output predictable, the dependencies aren't returned by deafult.
 print(x(b=1, u=(1, 2)))
-# >> (array([2., 2.]), {'a': array([1., 2.])})
+# >> (2.0, 2.0)
 
 # you can overwrite the dependency calculation
 print(x(b=1/2, a=1/2))
 # >> 1.0
 ```
+
+If there are no dependency values, an empty dict will be returned when
+`retdeps=True` is specified.

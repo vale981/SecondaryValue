@@ -66,9 +66,9 @@ class SecondaryValue:
             if name in kwargs:
                 continue
 
-            tmp = sec_val(**kwargs)
-            kwargs[name] = tmp[0] if (len(tmp) > 1 and isinstance(tmp, tuple)) \
-                else tmp
+            # we always calculate the depndencies
+            tmp = sec_val(retdeps=True, **kwargs)
+            kwargs[name] = tmp[0]
             calc_deps[name] = tmp
 
         return kwargs, calc_deps
@@ -111,6 +111,7 @@ class SecondaryValue:
                   dep_values (the values and errors of the dependencies)
 
         :rtype: Tuple
+
         """
 
         kwargs, dep_values = self._calc_deps(**kwargs)
@@ -124,7 +125,6 @@ class SecondaryValue:
         # filter out unneeded
         kwargs = {var: val for var, val in kwargs.items() \
                   if var in self._symbols}
-
 
         max_uncertainties = max([len(val) for _, val in kwargs.items() \
                                  if isinstance(val, Iterable)] or [0])
@@ -158,7 +158,6 @@ class SecondaryValue:
             central_value = np.empty(value_length)
             for i in range(0, value_length):
                 current_values = join_row(scalar_values, vector_values, i)
-
                 central_value[i] = self._parsed_lambda(**current_values)
         else:
             central_value = self._dtype(self._parsed_lambda(**scalar_values))
@@ -204,22 +203,24 @@ class SecondaryValue:
 
         return terms
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, retdeps=False, **kwargs):
         """Calculates a value from the expression by substituting
-        variables by the values of the given keyword arguments.  If an
-        argument is specified as a tuplpe of (value, error) the
-        gausssian error propagation will be computed.
 
-        The values and errors can be iterable, but must compatible shapes.
+        The values and errors can be iterable, but must compatible
+        shapes.
 
-        :returns: value or [value, error] or [value, error], dependencies
+        :param retdeps: wether to return a dictionary with the
+            calculated dependencies
+
+        :returns: value or [value, error] or [value, error, ...],
+                  dependencies
 
         :rtype: numpy data type or np array of [value, errors, ...] or
                 a tuple the beforementioned as first element and a
-                dictionary with the calculated dependencies as a second value
+                dictionary with the calculated dependencies as a
+                second value
         """
-
-        # process the keyword arguments
+         # process the keyword arguments
         values, errors, dep_values = self._process_args(*args, **kwargs)
 
         # calulate the central value
@@ -237,7 +238,7 @@ class SecondaryValue:
         result.insert(0, central_value)
         result = tuple(result)
 
-        if dep_values:
+        if retdeps:
             return result, dep_values
 
         return result
@@ -293,5 +294,5 @@ def filter_out_vecotrized(dictionary):
     return scalar, vector
 
 def join_row(scalar, vector, index):
-     return {**scalar, **{key: val[index] \
-                          for key, val in vector.items()}}
+    return {**scalar, **{key: val[index] \
+                         for key, val in vector.items()}}
