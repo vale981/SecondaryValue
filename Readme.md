@@ -17,7 +17,7 @@ from SecondaryValue import SecondaryValue
 # the argument can be either a string or a sympy expression
 x = SecondaryValue("a*b/sqrt(c)")
 
-# Calculate a result value by substituting the keyword arguments
+# Calculate a result value by substi3tuting the keyword arguments
 # where a keyword agument may consist of (value, error_1, error_2, ...)
 # and (...) stands for any iterable.
 result = x(a=(1, 20), b=(2,  30), c=2)

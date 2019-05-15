@@ -68,6 +68,7 @@ class SecondaryValue:
 
             # we always calculate the depndencies
             tmp = sec_val(retdeps=True, **kwargs)
+
             kwargs[name] = tmp[0]
             calc_deps[name] = tmp
 
@@ -220,7 +221,8 @@ class SecondaryValue:
                 dictionary with the calculated dependencies as a
                 second value
         """
-         # process the keyword arguments
+
+        # process the keyword arguments
         values, errors, dep_values = self._process_args(*args, **kwargs)
 
         # calulate the central value
@@ -229,7 +231,7 @@ class SecondaryValue:
                                                       vector_values)
 
         if not errors:
-            return central_value
+            return (central_value, dep_values) if retdeps else central_value
 
         # calculate errors
         result = self._calculate_errors(errors, vector_values, scalar_values)
@@ -238,10 +240,7 @@ class SecondaryValue:
         result.insert(0, central_value)
         result = tuple(result)
 
-        if retdeps:
-            return result, dep_values
-
-        return result
+        return (result, dep_values) if retdeps else result
 
     def _get_derivatives(self, *args):
         """Calculates the derivatives of the expression for a given
