@@ -1,4 +1,6 @@
 # Secondary Value
+[![Coverage Status](https://coveralls.io/repos/github/vale981/SecondaryValue/badge.svg)](https://coveralls.io/github/vale981/SecondaryValue)
+[![Build Status](https://travis-ci.org/vale981/SecondaryValue.svg?branch=master)](https://travis-ci.org/vale981/SecondaryValue)
 
 This is a utility to simplify the calculation of values and their
 uncertaintues from symbolic formulas by using `sympy` and `numpy`.
