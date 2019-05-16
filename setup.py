@@ -1,8 +1,10 @@
 from setuptools import setup
 
-
+# read the contents of your README file
+from os import path
+this_directory = path.abspath(path.dirname(__file__))
 def readme():
-    with open('Readme.md') as f:
+    with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
         return f.read()
 
 setup(name='SecondaryValue',
