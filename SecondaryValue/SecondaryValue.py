@@ -67,10 +67,13 @@ class SecondaryValue:
                 continue
 
             # we always calculate the depndencies
-            tmp = sec_val(retdeps=True, **kwargs)
+            tmp = sec_val(retdeps=True, ret_explicit_errors=True, **kwargs)
+            result, deps = tmp
+            value = result[0]
+            errors = result[1:] if len(result) > 1 else False
 
-            kwargs[name] = tmp[0]
-            calc_deps[name] = tmp
+            kwargs[name] = [value] + list(errors) if errors else (value,)
+            calc_deps[name] = (kwargs[name], deps)
 
         return kwargs, calc_deps
 
@@ -134,7 +137,6 @@ class SecondaryValue:
         errors = [{var: val[i] for var, val in kwargs.items() \
                    if isinstance(val, Iterable) and len(val) > i} \
                   for i in range(1, max_uncertainties)]
-
 
         values = {var: (val[0] if isinstance(val, Iterable) else val) \
                   for var, val in kwargs.items()}
@@ -204,7 +206,8 @@ class SecondaryValue:
 
         return terms
 
-    def __call__(self, *args, retdeps=False, **kwargs):
+    def __call__(self, *args, retdeps=False,
+               ret_explicit_errors=False, **kwargs):
         """Calculates a value from the expression by substituting
 
         The values and errors can be iterable, but must compatible
@@ -212,6 +215,9 @@ class SecondaryValue:
 
         :param retdeps: wether to return a dictionary with the
             calculated dependencies
+
+        :param ret_explicit_errors: wether to return the errors even
+            if they are None, used internally
 
         :returns: value or [value, error] or [value, error, ...],
                   dependencies
@@ -231,7 +237,9 @@ class SecondaryValue:
                                                       vector_values)
 
         if not errors:
-            return (central_value, dep_values) if retdeps else central_value
+            retval = (central_value,) if ret_explicit_errors \
+                else central_value
+            return (retval, dep_values) if retdeps else retval
 
         # calculate errors
         result = self._calculate_errors(errors, vector_values, scalar_values)

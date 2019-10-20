@@ -44,7 +44,12 @@ class TestDependecies():
         result, deps = self.y(a=1, b=2, retdeps=True)
 
         assert result == 3
-        assert deps == {'x': (2, {})}
+        assert deps == {'x': ((2,), {})}
+
+    def test_vectorized_dependencies(self):
+        result = self.y(a=[[1,2]], b=2)
+        print(result)
+        assert numpy.isclose(result, [3,4]).all()
 
     def test_dep_calc_err(self):
         # no retdep
